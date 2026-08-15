@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nagpur Traffic Simulation</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app">
+    <header id="topbar">
+      <h1>Nagpur Traffic Simulation</h1>
+      <div id="clock-readout">
+        <span id="clock-time">--:--</span>
+        <span id="clock-status" class="status-pill status-offpeak">OFF-PEAK</span>
+      </div>
+    </header>
+
+    <main id="layout">
+      <div id="map"></div>
+
+      <aside id="panel">
+        <section class="panel-group">
+          <h2>Simulation Controls</h2>
+          <button id="btn-play">Pause</button>
+          <button id="btn-reset">Reset to 06:00</button>
+
+          <label for="speed-slider">
+            Speed: <span id="speed-value">60</span>x
+          </label>
+          <input type="range" id="speed-slider" min="1" max="600" value="60" step="1">
+        </section>
+
+        <section class="panel-group">
+          <h2>Peak Windows</h2>
+          <ul id="peak-windows-list"></ul>
+        </section>
+
+        <section class="panel-group">
+          <h2>Congestion Mitigation</h2>
+          <label class="toggle-row">
+            <input type="checkbox" id="toggle-rerouting" checked>
+            <span>Dynamic rerouting</span>
+          </label>
+          <p class="hint">
+            Shifts load from overloaded junctions to nearby ones with
+            spare capacity. Uncheck to see raw, unmitigated congestion.
+          </p>
+
+          <label class="toggle-row">
+            <input type="checkbox" id="toggle-live-traffic">
+            <span>Live traffic feed</span>
+          </label>
+          <p class="hint">
+            Overlays real-world congestion (TomTom) on top of the
+            simulated model. Hotspots without live data fall back to
+            the synthetic peak-hour curve.
+          </p>
+          <div class="stat-row">
+            <span>Live feed status</span>
+            <span id="stat-live-status">Off</span>
+          </div>
+
+          <div class="stat-row">
+            <span>Network avg load</span>
+            <span id="stat-avg-load">--%</span>
+          </div>
+          <div class="stat-row">
+            <span>Active reroutes</span>
+            <span id="stat-reroute-count">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Load shifted</span>
+            <span id="stat-load-shifted">0%</span>
+          </div>
+
+          <h3 class="subheading">Active reroutes</h3>
+          <ul id="reroute-details-list" class="reroute-details"></ul>
+        </section>
+
+        <section class="panel-group">
+          <h2>Legend</h2>
+          <ul class="legend">
+            <li><span class="dot dot-free"></span> Free flow (&lt;35%)</li>
+            <li><span class="dot dot-moderate"></span> Moderate (35–60%)</li>
+            <li><span class="dot dot-heavy"></span> Heavy (60–80%)</li>
+            <li><span class="dot dot-severe"></span> Severe (&gt;80%)</li>
+            <li><span class="dot dot-reroute"></span> Active reroute</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- App scripts (order matters: config -> clock -> model -> rerouting -> markers -> liveTraffic -> toggleFreeze -> main) -->
+  <script src="js/config.js"></script>
+  <script src="js/simulationClock.js"></script>
+  <script src="js/congestionModel.js"></script>
+  <script src="js/rerouting.js"></script>
+  <script src="js/markers.js"></script>
+  <script src="js/liveTraffic.js"></script>
+  <script src="js/toggleFreeze.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
