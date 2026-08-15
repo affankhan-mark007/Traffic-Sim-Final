@@ -1,0 +1,304 @@
+:root {
+  --bg: #0f1216;
+  --panel-bg: #171b21;
+  --border: #262c35;
+  --text: #e7eaee;
+  --muted: #8b93a1;
+  --accent: #3b82f6;
+  --peak: #ef4444;
+  --offpeak: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ---- Top bar ---- */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+#topbar h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+#clock-readout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+#clock-time {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-peak {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--peak);
+}
+
+.status-offpeak {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--offpeak);
+}
+
+/* ---- Layout ---- */
+#layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#map {
+  flex: 1;
+  height: 100%;
+}
+
+#panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.panel-group {
+  margin-bottom: 24px;
+}
+
+.panel-group h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+#btn-play, #btn-reset {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: #1f2530;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#btn-play:hover, #btn-reset:hover {
+  border-color: var(--accent);
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+#peak-windows-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+#peak-windows-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot-free { background: #22c55e; }
+.dot-moderate { background: #eab308; }
+.dot-heavy { background: #f97316; }
+.dot-severe { background: #ef4444; }
+.dot-reroute {
+  background: transparent;
+  border-radius: 0;
+  width: 14px;
+  height: 0;
+  border-top: 2px dashed #38bdf8;
+}
+
+/* ---- Congestion mitigation panel ---- */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.toggle-row input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row span:last-child {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.subheading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 14px 0 6px;
+}
+
+.reroute-details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.reroute-details li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.reroute-details li span:first-child {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reroute-details li span:last-child {
+  color: #38bdf8;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.reroute-empty {
+  color: var(--muted);
+  font-style: italic;
+  border-bottom: none !important;
+}
+
+/* ---- Reroute lines on the map ---- */
+
+/* Marching-dash animation shows flow direction from source to target. */
+.reroute-line {
+  animation: reroute-flow 0.9s linear infinite;
+}
+
+@keyframes reroute-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* Small permanent "% shifted" pill at the midpoint of each reroute line. */
+.reroute-line-label {
+  background: rgba(15, 18, 22, 0.9) !important;
+  border: 1px solid #38bdf8 !important;
+  color: #38bdf8 !important;
+  font-size: 10px !important;
+  font-weight: 700;
+  padding: 1px 6px !important;
+  border-radius: 999px;
+  box-shadow: none !important;
+}
+
+.reroute-line-label::before {
+  display: none; /* hide Leaflet's default tooltip arrow */
+}
+
+/* ---- Leaflet marker override ---- */
+.traffic-marker {
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  transition: background-color 0.3s ease;
+}
