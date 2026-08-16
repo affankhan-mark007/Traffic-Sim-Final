@@ -1,62 +1,91 @@
 /**
  * liveTraffic.js
- * Fetches real-world congestion via TomTom's Traffic Flow API and maps
- * it onto the same 0-100 load scale the synthetic congestionModel.js
- * uses, so it can be swapped in as a drop-in replacement per hotspot.
- *
- * Polled on a real-world interval from main.js — never called once per
- * simulation tick, since that would blow through API rate limits in
- * seconds even at 1x sim speed.
+ * Optional overlay: replaces the synthetic per-hotspot congestion with
+ * real-world data from TomTom's Flow Segment Data API when the "Live
+ * traffic feed" checkbox is on. Hotspots that fail to fetch (no
+ * coverage at that point, rate limit, network error) simply fall back
+ * to the synthetic peak-hour curve for that tick — never blocks
+ * rendering.
  */
+const LiveTraffic = (() => {
+  let enabled = false;
+  let pollTimer = null;
+  const liveLoads = {}; // id -> 0-100, only present once a fetch succeeds
+  let onStatusChange = () => {};
 
-/**
- * Fetches live load for a single intersection.
- * @returns {Promise<number>} 0-100 load, derived from how far below
- *   free-flow speed the current speed is.
- */
-async function fetchLiveLoad(intersection, apiKey) {
-  const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${intersection.lat},${intersection.lng}&key=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`TomTom ${res.status} for ${intersection.id}`);
-
-  const { flowSegmentData } = await res.json();
-  const { currentSpeed, freeFlowSpeed } = flowSegmentData;
-
-  if (!freeFlowSpeed || freeFlowSpeed <= 0) {
-    throw new Error(`No freeFlowSpeed for ${intersection.id}`);
+  /** TomTom currentSpeed/freeFlowSpeed -> a 0-100 "load" score, same scale as the synthetic model. */
+  function segmentToLoad(segment) {
+    if (!segment || !segment.currentSpeed || !segment.freeFlowSpeed) return null;
+    const ratio = segment.currentSpeed / segment.freeFlowSpeed;
+    return Math.round(Math.min(100, Math.max(0, (1 - ratio) * 100)));
   }
 
-  return Math.max(0, Math.min(100, (1 - currentSpeed / freeFlowSpeed) * 100));
-}
+  async function fetchOne(intersection) {
+    const { apiKey } = CONFIG.liveTraffic;
+    const url =
+      `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json` +
+      `?point=${intersection.lat},${intersection.lng}&key=${apiKey}`;
 
-/**
- * Fetches live load for every intersection. Uses allSettled so one
- * failed point (dead zone, rate limit) doesn't take down the rest —
- * failed ids are simply absent from the returned loads object, and the
- * caller in main.js falls back to the synthetic model for those.
- *
- * @returns {Promise<{loads: Object, failedIds: string[]}>}
- */
-async function fetchAllLiveLoads(intersections, apiKey) {
-  const loads = {};
-  const failedIds = [];
-
-  const results = await Promise.allSettled(
-    intersections.map((i) => fetchLiveLoad(i, apiKey).then((load) => ({ id: i.id, load })))
-  );
-
-  results.forEach((result, idx) => {
-    if (result.status === "fulfilled") {
-      loads[result.value.id] = result.value.load;
-    } else {
-      failedIds.push(intersections[idx].id);
-      console.warn("Live traffic fetch failed:", intersections[idx].id, result.reason);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const load = segmentToLoad(data.flowSegmentData);
+      if (load !== null) {
+        liveLoads[intersection.id] = load;
+      } else {
+        delete liveLoads[intersection.id]; // no usable data here -> fall back this tick
+      }
+    } catch (err) {
+      console.warn(`Live traffic: fetch failed for ${intersection.name}`, err);
+      delete liveLoads[intersection.id];
     }
-  });
+  }
 
-  return { loads, failedIds };
-}
+  async function pollAll(intersections) {
+    onStatusChange("Loading…");
+    await Promise.all(intersections.map(fetchOne));
+    if (!enabled) return; // toggled off mid-fetch
+    const gotAny = Object.keys(liveLoads).length > 0;
+    onStatusChange(gotAny ? "Live" : "No data (fallback)");
+  }
+
+  return {
+    /**
+     * Registers the status callback. Call once, before enable/disable.
+     * statusCallback receives one of: "Off" | "Loading…" | "Live" | "No data (fallback)".
+     */
+    init(statusCallback) {
+      onStatusChange = statusCallback || (() => {});
+    },
+
+    /** Starts polling immediately, then every CONFIG.liveTraffic.pollIntervalMs. */
+    enable(intersections) {
+      if (enabled) return;
+      enabled = true;
+      pollAll(intersections);
+      pollTimer = setInterval(() => pollAll(intersections), CONFIG.liveTraffic.pollIntervalMs);
+    },
+
+    disable() {
+      enabled = false;
+      clearInterval(pollTimer);
+      pollTimer = null;
+      Object.keys(liveLoads).forEach((id) => delete liveLoads[id]);
+      onStatusChange("Off");
+    },
+
+    isEnabled() {
+      return enabled;
+    },
+
+    /** Returns the live 0-100 load for this intersection id, or null if unavailable. */
+    getLoad(id) {
+      return enabled && id in liveLoads ? liveLoads[id] : null;
+    },
+  };
+})();
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { fetchLiveLoad, fetchAllLiveLoads };
+  module.exports = { LiveTraffic };
 }
