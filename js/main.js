@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const speedValueEl = document.getElementById("speed-value");
   const peakListEl = document.getElementById("peak-windows-list");
   const reroutingToggle = document.getElementById("toggle-rerouting");
+  const liveTrafficToggle = document.getElementById("toggle-live-traffic");
+  const liveStatusEl = document.getElementById("stat-live-status");
   const avgLoadEl = document.getElementById("stat-avg-load");
   const rerouteCountEl = document.getElementById("stat-reroute-count");
   const loadShiftedEl = document.getElementById("stat-load-shifted");
@@ -137,6 +139,16 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const rawLoads = computeAllRawLoads(SAMPLE_INTERSECTIONS, snapshot);
 
+      // Live feed overrides the synthetic load per-hotspot wherever a
+      // fresh TomTom reading exists; hotspots without live data keep
+      // their synthetic value for this tick.
+      if (LiveTraffic.isEnabled()) {
+        SAMPLE_INTERSECTIONS.forEach((i) => {
+          const live = LiveTraffic.getLoad(i.id);
+          if (live !== null) rawLoads[i.id] = live;
+        });
+      }
+
       let effectiveLoads = rawLoads;
       let reroutedPairs = [];
 
@@ -215,6 +227,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Give instant feedback when the mitigation strategy is toggled,
   // rather than waiting for the next tick.
   reroutingToggle.addEventListener("change", () => {
+    render(currentSnapshot());
+  });
+
+  // ---- Live traffic feed ----
+  LiveTraffic.init((status) => {
+    liveStatusEl.textContent = status;
+  });
+
+  liveTrafficToggle.addEventListener("change", () => {
+    if (liveTrafficToggle.checked) {
+      LiveTraffic.enable(SAMPLE_INTERSECTIONS);
+    } else {
+      LiveTraffic.disable();
+    }
     render(currentSnapshot());
   });
 });
