@@ -85,7 +85,7 @@ const CONFIG = {
   liveTraffic: {
     enabled: false,
     provider: "tomtom",
-    apiKey: "chy39HqMtBxBYZzh0svyO36qJTCADjSg", // get one free at developer.tomtom.com — don't ship a real key client-side in production, proxy it server-side instead
+    apiKey: ", // get one free at developer.tomtom.com — don't ship a real key client-side in production, proxy it server-side instead
     pollIntervalMs: 10 * 60 * 1000, // 10 min — keeps 19 hotspots well under TomTom's free 2,500 req/day tier
   },
 };
